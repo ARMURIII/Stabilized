@@ -11,7 +11,6 @@ import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
 import com.simibubi.create.foundation.blockEntity.behaviour.scrollValue.ScrollOptionBehaviour;
-import dev.ryanhcode.sable.api.physics.constraint.rotary.RotaryConstraintHandle;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.simulated_team.simulated.content.blocks.swivel_bearing.SwivelBearingBlock;
@@ -38,7 +37,6 @@ public abstract class SwivelBearingBlockEntityMixin {
     @Shadow protected abstract SubLevel getContainingSubLevel();
 
     @Shadow @Final @NotNull private SwivelBearingBlockEntity.@NotNull SwivelBearingCogwheelBlockEntity cogwheel;
-    @Shadow private @Nullable RotaryConstraintHandle handle;
 
     @Shadow
     @Nullable

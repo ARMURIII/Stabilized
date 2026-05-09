@@ -5,14 +5,11 @@ import arr.armuriii.stabilized.index.StabilizedBlockEntityTypes;
 import arr.armuriii.stabilized.index.StabilizedBlocks;
 import com.mojang.logging.LogUtils;
 import com.simibubi.create.api.stress.BlockStressValues;
-import com.simibubi.create.content.contraptions.bearing.MechanicalBearingBlockEntity;
-import com.simibubi.create.content.kinetics.flywheel.FlywheelBlockEntity;
 import com.simibubi.create.foundation.item.ItemDescription;
 import com.simibubi.create.foundation.item.KineticStats;
 import com.simibubi.create.foundation.item.TooltipHelper;
 import com.simibubi.create.foundation.item.TooltipModifier;
 import com.tterrag.registrate.util.nullness.NonNullSupplier;
-import dev.simulated_team.simulated.index.SimBlocks;
 import dev.simulated_team.simulated.registrate.SimulatedRegistrate;
 import dev.simulated_team.simulated.util.SimColors;
 import net.createmod.catnip.lang.FontHelper;
@@ -32,6 +29,7 @@ public class Stabilized {
     public static final String MOD_ID = "stabilized";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    @SuppressWarnings({"unchecked","rawtypes"})
     private static final NonNullSupplier<SimulatedRegistrate> REGISTRATE = NonNullSupplier.lazy(() ->
             (SimulatedRegistrate)(new SimulatedRegistrate(path(MOD_ID), MOD_ID)).defaultCreativeTab((ResourceKey)null));
 
@@ -39,7 +37,7 @@ public class Stabilized {
         return REGISTRATE.get();
     }
 
-    public Stabilized(IEventBus modEventBus, ModContainer modContainer) {
+    public Stabilized(IEventBus modEventBus, ModContainer ignoredModContainer) {
         setTooltips();
 
         StabilizedAdvancements.register();

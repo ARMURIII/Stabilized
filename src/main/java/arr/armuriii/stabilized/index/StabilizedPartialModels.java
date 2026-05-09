@@ -3,11 +3,13 @@ package arr.armuriii.stabilized.index;
 import arr.armuriii.stabilized.Stabilized;
 import dev.engine_room.flywheel.lib.model.baked.PartialModel;
 
+@SuppressWarnings("unused")
 public class StabilizedPartialModels {
     public static final PartialModel
             STABILIZER_BEARING_COG = block("stabilizer_bearing/brass_cog");
 
 
+    @SuppressWarnings("SameParameterValue")
     private static PartialModel block(final String path) {
         return PartialModel.of(Stabilized.path("block/" + path));
     }

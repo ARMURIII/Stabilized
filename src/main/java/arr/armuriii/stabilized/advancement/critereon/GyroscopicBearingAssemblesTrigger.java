@@ -16,10 +16,6 @@ public class GyroscopicBearingAssemblesTrigger extends SimpleCriterionTrigger<Gy
 
     }
 
-    public void trigger(ServerPlayer player, double distance) {
-        this.trigger(player,triggerInstance -> triggerInstance.distance.matches(distance));
-    }
-
     @Override
     public @NotNull Codec<TriggerInstance> codec() {
         return TriggerInstance.CODEC;
@@ -31,10 +27,5 @@ public class GyroscopicBearingAssemblesTrigger extends SimpleCriterionTrigger<Gy
                 EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
                 MinMaxBounds.Doubles.CODEC.optionalFieldOf("distance", MinMaxBounds.Doubles.atLeast(10)).forGetter(TriggerInstance::distance))
                 .apply(p_337349_, TriggerInstance::new));
-
-        public static Criterion<TriggerInstance> assemblesGyroscopicBearing() {
-            return StabilizedAdvancements.GYROSCOPIC_BEARING_ASSEMBLES_TRIGGER.get()
-                    .createCriterion(new TriggerInstance(Optional.empty(), MinMaxBounds.Doubles.atLeast(10)));
-        }
     }
 }
