@@ -1,12 +1,9 @@
 package arr.armuriii.stabilized.mixin;
 
+import arr.armuriii.stabilized.mixin.accessor.BlockEntityAccessor;
 import arr.armuriii.stabilized.util.StabilizedLockingSettings;
-import com.llamalad7.mixinextras.expression.Definition;
-import com.llamalad7.mixinextras.expression.Expression;
-import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.Share;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import com.simibubi.create.foundation.blockEntity.behaviour.ValueBoxTransform;
@@ -17,13 +14,18 @@ import dev.simulated_team.simulated.content.blocks.swivel_bearing.SwivelBearingB
 import dev.simulated_team.simulated.content.blocks.swivel_bearing.SwivelBearingBlockEntity;
 import net.createmod.catnip.config.ConfigBase;
 import net.createmod.catnip.math.AngleHelper;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.MutableComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaterniond;
 import org.joml.Quaternionf;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static arr.armuriii.stabilized.util.RotationUtils.*;
 
@@ -70,55 +72,81 @@ public abstract class SwivelBearingBlockEntityMixin {
         return stabilized$lockedDefaultOption.get().shouldLock(signal);
     }
 
-    @Definition(id = "attached", local = @Local(type = SubLevel.class, name = "attached"))
-    @Expression("attached != null")
-    @ModifyExpressionValue(method = "tick", at = @At("MIXINEXTRAS:EXPRESSION"))
-    // this doesn't change "attached != null", it only changes this.targetAngleDegrees AFTER it was calculated
-    // couldn't find a better place than at the if statement right after ...
-    private boolean changeBehavior(boolean original, @Local(name = "shouldLock") final boolean shouldLock) {
-        if (this.stabilized$lockedDefaultOption.get().stabilizationCoef() == 0)
-            return original; // if the mode is not stabilized, return prematurely
-
-        if (!shouldLock)
-            return original; // if the stabilization is deactivated, return prematurely
-
-        var self = (SwivelBearingBlockEntity)(Object)this;
-
-        this.targetAngleDegrees = 0; // if the bearing is not on a sublevel
-
-        var attached = this.getAttachedSubLevel();
-        var containing = this.getContainingSubLevel();
-        if (containing != null) {
-            var q = containing.logicalPose().orientation();
-            var facing = self.getBlockState().getValue(SwivelBearingBlock.FACING);
-            this.targetAngleDegrees = AngleHelper.angleLerp(
-                    Math.sqrt(Math.abs(this.cogwheel.getSpeed()))/16, // sqrt(256)/16 = 1
-                    this.stabilized$lastStabilizedAngle,
-                    -Math.toDegrees(
-                            getAxisAngle(new Quaternionf(q),facing)
-                    )
-            )*Math.signum(this.cogwheel.getSpeed())
-            *this.stabilized$lockedDefaultOption.get().stabilizationCoef();
+    @Inject(
+            method = "tick",
+            at = @At(
+                    value = "FIELD",
+                    target = "Ldev/simulated_team/simulated/content/blocks/swivel_bearing/SwivelBearingBlockEntity;targetAngleDegrees:D",
+                    opcode = Opcodes.PUTFIELD,
+                    ordinal = 1,
+                    shift = At.Shift.AFTER
+            )
+    )
+    private void changeBehavior(CallbackInfo ci) {
+        if (this.stabilized$lockedDefaultOption.get().stabilizationCoef() == 0) {
+            return;
         }
-        if (Double.isNaN(this.targetAngleDegrees))
+
+        BlockEntityAccessor a = (BlockEntityAccessor) this;
+
+        int bestSignal = a.stabilized$getLevel().getBestNeighborSignal(a.stabilized$getBlockPos());
+        boolean shouldLock = this.stabilized$lockedDefaultOption.get().shouldLock(bestSignal);
+
+        if (!shouldLock) {
+            return;
+        }
+
+        SwivelBearingBlockEntity self = (SwivelBearingBlockEntity) (Object) this;
+
+        this.targetAngleDegrees = 0;
+
+        SubLevel attached = this.getAttachedSubLevel();
+        SubLevel containing = this.getContainingSubLevel();
+
+        if (containing != null) {
+            Quaterniond q = containing.logicalPose().orientation();
+            Direction facing = self.getBlockState().getValue(SwivelBearingBlock.FACING);
+
+            this.targetAngleDegrees =
+                    AngleHelper.angleLerp(
+                            Math.sqrt(Math.abs(this.cogwheel.getSpeed())) / 16.0,
+                            this.stabilized$lastStabilizedAngle,
+                            -Math.toDegrees(
+                                    getAxisAngle(
+                                            new Quaternionf(q),
+                                            facing
+                                    )
+                            )
+                    )
+                            * Math.signum(this.cogwheel.getSpeed())
+                            * this.stabilized$lockedDefaultOption.get().stabilizationCoef();
+        }
+
+        if (Double.isNaN(this.targetAngleDegrees)) {
             this.targetAngleDegrees = 0;
+        }
 
-        this.targetAngleDegrees %= 360;
+        this.targetAngleDegrees %= 360.0;
 
-        if (attached instanceof ServerSubLevel serverAttached && containing instanceof ServerSubLevel serverContaining)
-            if (Math.sqrt(serverContaining.getMassTracker().getMass())<serverAttached.getMassTracker().getMass())
-                this.targetAngleDegrees = AngleHelper.angleLerp(
-                        (
-                                Math.sqrt(serverContaining.getMassTracker().getMass())
-                                        /
-                                        serverAttached.getMassTracker().getMass()
-                        )/1.5,
-                        this.stabilized$lastStabilizedAngle,
-                        this.targetAngleDegrees
-                );
+        if (attached instanceof ServerSubLevel serverAttached
+                && containing instanceof ServerSubLevel serverContaining) {
+
+            if (Math.sqrt(serverContaining.getMassTracker().getMass())
+                    < serverAttached.getMassTracker().getMass()) {
+
+                this.targetAngleDegrees =
+                        AngleHelper.angleLerp(
+                                (
+                                        Math.sqrt(serverContaining.getMassTracker().getMass())
+                                                / serverAttached.getMassTracker().getMass()
+                                ) / 1.5,
+                                this.stabilized$lastStabilizedAngle,
+                                this.targetAngleDegrees
+                        );
+            }
+        }
 
         this.stabilized$lastStabilizedAngle = this.targetAngleDegrees;
-        return original;
     }
 
     @WrapOperation(method = "updateServoCoefficients", at = @At(value = "INVOKE", target = "Lnet/createmod/catnip/config/ConfigBase$ConfigFloat;get()Ljava/lang/Object;",ordinal = 2))
