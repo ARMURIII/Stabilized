@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 public class Stabilized {
 
     public static final String MOD_ID = "stabilized";
+    @SuppressWarnings("unused")
     public static final Logger LOGGER = LogUtils.getLogger();
 
     @SuppressWarnings({"unchecked","rawtypes"})
@@ -62,9 +63,9 @@ public class Stabilized {
     }
 
     private static void setup(FMLCommonSetupEvent event) {
-        event.enqueueWork(() -> {
-            BlockStressValues.IMPACTS.register(StabilizedBlocks.STABILIZER_BEARING.get(),()->4);
-        });
+        event.enqueueWork(() ->
+            BlockStressValues.IMPACTS.register(StabilizedBlocks.STABILIZER_BEARING.get(),()->4)
+        );
     }
 
     public static ResourceLocation path(final String path) {

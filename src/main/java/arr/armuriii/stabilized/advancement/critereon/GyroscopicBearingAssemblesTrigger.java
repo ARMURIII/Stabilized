@@ -1,11 +1,8 @@
 package arr.armuriii.stabilized.advancement.critereon;
 
-import arr.armuriii.stabilized.index.StabilizedAdvancements;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.Criterion;
 import net.minecraft.advancements.critereon.*;
-import net.minecraft.server.level.ServerPlayer;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;

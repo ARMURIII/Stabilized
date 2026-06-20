@@ -70,7 +70,7 @@ public abstract class SwivelBearingBlockEntityMixin {
         return stabilized$lockedDefaultOption.get().shouldLock(signal);
     }
 
-    @Definition(id = "attached", local = @Local(type = SubLevel.class, name = "attached"))
+    @Definition(id = "attached", local = @Local(type = ServerSubLevel.class, name = "attached"))
     @Expression("attached != null")
     @ModifyExpressionValue(method = "tick", at = @At("MIXINEXTRAS:EXPRESSION"))
     // this doesn't change "attached != null", it only changes this.targetAngleDegrees AFTER it was calculated
